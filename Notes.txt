@@ -1,0 +1,73 @@
+How to connect to H2 DB through JPA
+===================================
+
+https://bezkoder.com/spring-boot-jpa-h2-example/
+https://www.javatpoint.com/spring-boot-crud-operations
+https://thorben-janssen.com/spring-data-jpa-query-annotation/
+
+0) Add the below dependencies
+
+spring-boot-starter-data-jpa
+spring-boot-starter-web
+h2
+
+1) Add the below inside application.properties
+#######################################################################################################################
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect
+
+#We don't want JPA to create a schema for us
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.generate-ddl=false
+
+##Most important property. This will enable us to define our custom column name in schema.sql file
+##If not given as below, then JPA will create tables with its own naming convention
+spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+
+spring.h2.console.enabled=true
+
+## Access the H2 dashboard as :- http://localhost:8080/h2-ui
+spring.h2.console.path=/h2-ui
+
+## Free API from which we populate country data through REST
+app.country.url=https://restcountries.eu/rest/v2/all
+
+########################################################################################################################
+
+2) Create 4 packages [controller, service, repository, model]
+Note: repository package contains the JPA layer and model package contains table mapping
+
+3) Create an sql file inside resources folder defining the schema for our two tables [Country and Languages]
+   If we want to give JPA the control to create the tables automtically, then don't provide the above sql. 
+
+4) Create two DB models called Language.java and Country .java
+  Note: Language is the independent parent class and Country has a foreign key relationship with Language table [Country has a language]
+  Refer Country.java DB Model class for further details
+ 
+4) Create two repositiories called LanguageRespository.java and CountryRepository.java
+
+5) Since we use custom query for Country table[not using the default provided methods from JPA], defines the query in CountryRepository.java
+    Note: refer CountryRepository.java for more details
+	
+6) Define Two web models [Language and Country]. This is JSON mapping models which we will populate when we do REST call to public API [https://restcountries.eu/rest/v2/all]
+and store the intermediatry data there. Using these we will populate the actual tables initially.
+	
+General Algorithm:-
+ During start UP
+ 0) As part of POSTCONSTRUCT Service will go fetch the details from [https://restcountries.eu/rest/v2/all]
+ 1) TablesLanguage and Country are populated with the retrieved data
+
+
+7) To run curl commands for PUT requests follow the below commands
+
+  curl -X PUT -d  http://localhost:8080/countries/delete-all
+  
+  curl -X PUT -d  http://localhost:8080/countries/populate-all
+  
+  curl -X PUT -d  http://localhost:8080/countries/delete-all/some_country_name
